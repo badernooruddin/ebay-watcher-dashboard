@@ -439,15 +439,29 @@
 
   let allMatches = [];
 
+  function renderFooter(usage) {
+    const footer = document.getElementById("footer");
+    const parts = ["Data refreshed automatically by the watcher bot"];
+    if (usage) {
+      const today = new Date().toISOString().slice(0, 10);
+      const todayUsage = (usage.daily && usage.daily[today]) || {};
+      const todayCalls = (todayUsage.get_cert_full_calls || 0) + (todayUsage.get_cert_sales_calls || 0);
+      const totalCalls = (usage.total_get_cert_full_calls || 0) + (usage.total_get_cert_sales_calls || 0);
+      parts.push(`Parse.bot usage: ${totalCalls} total · ${todayCalls} today`);
+    }
+    footer.textContent = parts.join(" · ");
+  }
+
   fetch(DATA_URL, { cache: "no-store" })
     .then(r => r.ok ? r.json() : [])
     .then(data => {
       allMatches = Array.isArray(data) ? data : [];
       render(sortMatches(allMatches, document.getElementById("sort").value));
-      const footer = document.getElementById("footer");
-      footer.textContent = allMatches.length
-        ? `Data refreshed automatically by the watcher bot · ebay-watcher (private repo)`
-        : "";
+
+      fetch("usage.json", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then(usage => renderFooter(usage))
+        .catch(() => renderFooter(null));
     })
     .catch(() => {
       document.getElementById("empty").style.display = "block";
