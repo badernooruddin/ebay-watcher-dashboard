@@ -178,6 +178,12 @@
 
   .badge.rarity-good { background: var(--rarity-good-bg); color: var(--rarity-good); }
   .badge.rarity-mid { background: var(--rarity-mid-bg); color: var(--rarity-mid); }
+  .badge.type-badge { background: var(--accent-soft); color: var(--accent); }
+
+  .end-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
 
   .price-row {
     display: flex;
@@ -278,6 +284,23 @@
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
+  function fmtEndDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) +
+      " " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+
+  // eBay's buyingOptions values: AUCTION, FIXED_PRICE, BEST_OFFER (can combine)
+  function listingTypeLabel(buyingOptions) {
+    if (!buyingOptions || !buyingOptions.length) return null;
+    const parts = [];
+    if (buyingOptions.includes("AUCTION")) parts.push("Auction");
+    if (buyingOptions.includes("FIXED_PRICE")) parts.push("Buy It Now");
+    if (buyingOptions.includes("BEST_OFFER")) parts.push("Best Offer");
+    return parts.join(" + ") || null;
+  }
+
   function render(matches) {
     const grid = document.getElementById("grid");
     const empty = document.getElementById("empty");
@@ -305,8 +328,15 @@
       if (pop != null) badges.push(`<span class="badge ${badgeClass}">PSA 10 pop: ${pop}</span>`);
       if (cert.total != null) badges.push(`<span class="badge">${cert.total} total graded</span>`);
 
+      const listingType = listingTypeLabel(m.buying_options);
+      if (listingType) badges.push(`<span class="badge type-badge">${listingType}</span>`);
+
       const estimate = cert.psa_estimate
         ? `<span class="estimate">PSA est. ${cert.psa_estimate}</span>`
+        : "";
+
+      const endDateHtml = m.end_date
+        ? `<span class="end-date">Auction ends ${fmtEndDate(m.end_date)}</span>`
         : "";
 
       return `
@@ -320,6 +350,7 @@
               ${estimate}
             </div>
             <span class="found-at">Found ${fmtDate(m.found_at)}</span>
+            ${endDateHtml}
             <a class="view-btn" href="${m.url}" target="_blank" rel="noopener noreferrer">View on eBay</a>
           </div>
         </div>
