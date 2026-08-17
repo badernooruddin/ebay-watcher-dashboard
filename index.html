@@ -17,6 +17,10 @@
     --rarity-good-bg: #e3efe7;
     --rarity-mid: #93611f;
     --rarity-mid-bg: #f4e9d8;
+    --deal-good: #2f6f4f;
+    --deal-good-bg: #e3efe7;
+    --deal-bad: #a34a3d;
+    --deal-bad-bg: #f5e4e0;
     --shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px rgba(30, 25, 15, 0.05);
     --radius: 14px;
   }
@@ -34,6 +38,10 @@
       --rarity-good-bg: #1c3327;
       --rarity-mid: #dcb15c;
       --rarity-mid-bg: #3a2e17;
+      --deal-good: #79c79a;
+      --deal-good-bg: #1c3327;
+      --deal-bad: #e08a78;
+      --deal-bad-bg: #3a201c;
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
     }
   }
@@ -185,6 +193,23 @@
     color: var(--text-muted);
   }
 
+  .deal-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .deal-badge.deal-good { background: var(--deal-good-bg); color: var(--deal-good); }
+  .deal-badge.deal-bad { background: var(--deal-bad-bg); color: var(--deal-bad); }
+
+  .last-sold {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
   .price-row {
     display: flex;
     align-items: baseline;
@@ -251,6 +276,7 @@
       <option value="price_asc">Price: low to high</option>
       <option value="price_desc">Price: high to low</option>
       <option value="rarity_asc">Rarest first</option>
+      <option value="deal_desc">Best deals first</option>
     </select>
   </div>
 </div>
@@ -301,6 +327,15 @@
     return parts.join(" + ") || null;
   }
 
+  // % below (positive) or above (negative) the last comparable sale price.
+  // null if we don't have both a listing price and a last-sold price to compare.
+  function dealPct(match) {
+    const lastSold = match.cert_info?.last_sold_price;
+    const price = Number(match.price);
+    if (lastSold == null || isNaN(price) || !Number(lastSold)) return null;
+    return ((Number(lastSold) - price) / Number(lastSold)) * 100;
+  }
+
   function render(matches) {
     const grid = document.getElementById("grid");
     const empty = document.getElementById("empty");
@@ -339,16 +374,33 @@
         ? `<span class="end-date">Auction ends ${fmtEndDate(m.end_date)}</span>`
         : "";
 
+      const pct = dealPct(m);
+      let dealHtml = "";
+      if (pct != null) {
+        const good = pct >= 0;
+        const cls = good ? "deal-good" : "deal-bad";
+        const label = good
+          ? `${pct.toFixed(0)}% below last sale`
+          : `${Math.abs(pct).toFixed(0)}% above last sale`;
+        dealHtml = `<span class="deal-badge ${cls}">${good ? "🔥 " : ""}${label}</span>`;
+      }
+
+      const lastSoldHtml = cert.last_sold_price
+        ? `<span class="last-sold">Last sold $${Number(cert.last_sold_price).toFixed(2)} · ${cert.last_sold_date || ""}${cert.last_sold_venue ? " · " + cert.last_sold_venue : ""}</span>`
+        : "";
+
       return `
         <div class="card">
           <div class="card-image">${imageHtml}</div>
           <div class="card-body">
             <p class="card-title">${escapeHtml(m.title)}</p>
             <div class="badges">${badges.join("")}</div>
+            ${dealHtml}
             <div class="price-row">
               <span class="price">${fmtPrice(m.price, m.currency)}</span>
               ${estimate}
             </div>
+            ${lastSoldHtml}
             <span class="found-at">Found ${fmtDate(m.found_at)}</span>
             ${endDateHtml}
             <a class="view-btn" href="${m.url}" target="_blank" rel="noopener noreferrer">View on eBay</a>
@@ -377,6 +429,8 @@
           const pb = b.cert_info?.grade10_population ?? Infinity;
           return pa - pb;
         });
+      case "deal_desc":
+        return copy.sort((a, b) => (dealPct(b) ?? -Infinity) - (dealPct(a) ?? -Infinity));
       case "found_desc":
       default:
         return copy.sort((a, b) => new Date(b.found_at) - new Date(a.found_at));
