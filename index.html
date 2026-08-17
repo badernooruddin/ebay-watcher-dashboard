@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vintage PSA 10 Pokémon Watch</title>
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --bg-elevated: #ffffff;
+    --border: #e3ded4;
+    --text: #22201c;
+    --text-muted: #6b655a;
+    --accent: #b6472a;
+    --accent-soft: #f3e2da;
+    --rarity-good: #2f6f4f;
+    --rarity-good-bg: #e3efe7;
+    --rarity-mid: #93611f;
+    --rarity-mid-bg: #f4e9d8;
+    --shadow: 0 1px 2px rgba(30, 25, 15, 0.06), 0 8px 24px rgba(30, 25, 15, 0.05);
+    --radius: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17130f;
+      --bg-elevated: #211c17;
+      --border: #34291e;
+      --text: #f1ece2;
+      --text-muted: #a89e8d;
+      --accent: #e2764f;
+      --accent-soft: #3a2019;
+      --rarity-good: #79c79a;
+      --rarity-good-bg: #1c3327;
+      --rarity-mid: #dcb15c;
+      --rarity-mid-bg: #3a2e17;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  header {
+    padding: 2.5rem 1.5rem 1.5rem;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .toolbar {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1.5rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .count-pill {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .controls { display: flex; gap: 0.5rem; align-items: center; }
+
+  select {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 0.7rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 1.5rem 3rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.1rem;
+  }
+
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease;
+  }
+
+  .card:hover { transform: translateY(-2px); }
+
+  .card-image {
+    aspect-ratio: 4 / 3;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #fff;
+  }
+
+  .card-image .placeholder {
+    color: var(--accent);
+    font-size: 2rem;
+    opacity: 0.5;
+  }
+
+  .card-body {
+    padding: 0.9rem 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    flex: 1;
+  }
+
+  .card-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--border);
+    color: var(--text-muted);
+  }
+
+  .badge.rarity-good { background: var(--rarity-good-bg); color: var(--rarity-good); }
+  .badge.rarity-mid { background: var(--rarity-mid-bg); color: var(--rarity-mid); }
+
+  .price-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 0.4rem;
+  }
+
+  .price {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .estimate {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .found-at {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .view-btn {
+    display: block;
+    text-align: center;
+    margin-top: 0.5rem;
+    padding: 0.55rem;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: 8px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-muted);
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem 3rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Vintage PSA 10 Pokémon Watch</h1>
+  <p class="subtitle">Confirmed PSA 10 grade, verified against PSA's own population records — auto-updated every 20 minutes.</p>
+</header>
+
+<div class="toolbar">
+  <span class="count-pill" id="count-pill">— matches</span>
+  <div class="controls">
+    <label for="sort" style="font-size:0.82rem;color:var(--text-muted);">Sort by</label>
+    <select id="sort">
+      <option value="found_desc">Newest first</option>
+      <option value="price_asc">Price: low to high</option>
+      <option value="price_desc">Price: high to low</option>
+      <option value="rarity_asc">Rarest first</option>
+    </select>
+  </div>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="empty" style="display:none;">No matches yet — check back soon.</div>
+</main>
+
+<footer id="footer"></footer>
+
+<script>
+  const DATA_URL = "matches.json";
+
+  function rarityBadgeClass(pop) {
+    if (pop == null) return "";
+    if (pop <= 30) return "rarity-good";
+    if (pop <= 100) return "rarity-mid";
+    return "";
+  }
+
+  function fmtPrice(price, currency) {
+    if (price == null) return "";
+    const n = Number(price);
+    return isNaN(n) ? price : `$${n.toFixed(2)}`;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+
+  function render(matches) {
+    const grid = document.getElementById("grid");
+    const empty = document.getElementById("empty");
+    const countPill = document.getElementById("count-pill");
+
+    countPill.textContent = `${matches.length} match${matches.length === 1 ? "" : "es"}`;
+
+    if (matches.length === 0) {
+      grid.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    grid.innerHTML = matches.map(m => {
+      const cert = m.cert_info || {};
+      const pop = cert.grade10_population;
+      const badgeClass = rarityBadgeClass(pop);
+      const imageHtml = cert.image_url
+        ? `<img src="${cert.image_url}" alt="${escapeHtml(m.title)}" loading="lazy" />`
+        : `<span class="placeholder">🎴</span>`;
+
+      const badges = [];
+      if (cert.year) badges.push(`<span class="badge">${cert.year}</span>`);
+      if (pop != null) badges.push(`<span class="badge ${badgeClass}">PSA 10 pop: ${pop}</span>`);
+      if (cert.total != null) badges.push(`<span class="badge">${cert.total} total graded</span>`);
+
+      const estimate = cert.psa_estimate
+        ? `<span class="estimate">PSA est. ${cert.psa_estimate}</span>`
+        : "";
+
+      return `
+        <div class="card">
+          <div class="card-image">${imageHtml}</div>
+          <div class="card-body">
+            <p class="card-title">${escapeHtml(m.title)}</p>
+            <div class="badges">${badges.join("")}</div>
+            <div class="price-row">
+              <span class="price">${fmtPrice(m.price, m.currency)}</span>
+              ${estimate}
+            </div>
+            <span class="found-at">Found ${fmtDate(m.found_at)}</span>
+            <a class="view-btn" href="${m.url}" target="_blank" rel="noopener noreferrer">View on eBay</a>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
+  function sortMatches(matches, mode) {
+    const copy = [...matches];
+    switch (mode) {
+      case "price_asc":
+        return copy.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+      case "price_desc":
+        return copy.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+      case "rarity_asc":
+        return copy.sort((a, b) => {
+          const pa = a.cert_info?.grade10_population ?? Infinity;
+          const pb = b.cert_info?.grade10_population ?? Infinity;
+          return pa - pb;
+        });
+      case "found_desc":
+      default:
+        return copy.sort((a, b) => new Date(b.found_at) - new Date(a.found_at));
+    }
+  }
+
+  let allMatches = [];
+
+  fetch(DATA_URL, { cache: "no-store" })
+    .then(r => r.ok ? r.json() : [])
+    .then(data => {
+      allMatches = Array.isArray(data) ? data : [];
+      render(sortMatches(allMatches, document.getElementById("sort").value));
+      const footer = document.getElementById("footer");
+      footer.textContent = allMatches.length
+        ? `Data refreshed automatically by the watcher bot · ebay-watcher (private repo)`
+        : "";
+    })
+    .catch(() => {
+      document.getElementById("empty").style.display = "block";
+      document.getElementById("empty").textContent = "Couldn't load data.";
+    });
+
+  document.getElementById("sort").addEventListener("change", (e) => {
+    render(sortMatches(allMatches, e.target.value));
+  });
+</script>
+
+</body>
+</html>
