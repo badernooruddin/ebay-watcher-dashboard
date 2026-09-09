@@ -1,0 +1,40 @@
+name: Verify eBay listings
+
+on:
+  schedule:
+    # Daily at 13:00 UTC
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Verify listings against the eBay Browse API
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+        run: python scripts/verify_listings.py
+
+      - name: Commit any removed listings
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- matches.json; then
+            git add matches.json
+            git commit -m "Remove listings no longer active on eBay"
+            git push
+          else
+            echo "No listing changes to commit."
+          fi
