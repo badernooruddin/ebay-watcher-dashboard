@@ -95,7 +95,7 @@
     white-space: nowrap;
   }
 
-  .controls { display: flex; gap: 0.5rem; align-items: center; }
+  .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 
   select {
     background: var(--bg-elevated);
@@ -105,6 +105,21 @@
     padding: 0.45rem 0.7rem;
     font-size: 0.85rem;
     font-family: inherit;
+  }
+
+  .checkbox-control {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .checkbox-control input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--accent);
   }
 
   main {
@@ -205,6 +220,12 @@
   .deal-badge.deal-good { background: var(--deal-good-bg); color: var(--deal-good); }
   .deal-badge.deal-bad { background: var(--deal-bad-bg); color: var(--deal-bad); }
 
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
   .last-sold {
     font-size: 0.72rem;
     color: var(--text-muted);
@@ -258,6 +279,53 @@
     color: var(--text-muted);
     font-size: 0.78rem;
   }
+
+  @media (max-width: 640px) {
+    header { padding: 1.5rem 1rem 1rem; }
+    h1 { font-size: 1.3rem; }
+    .subtitle { font-size: 0.88rem; }
+
+    .toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0 1rem 1.25rem;
+    }
+
+    .count-pill { text-align: center; }
+
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .controls label { text-align: left; }
+
+    select {
+      width: 100%;
+      padding: 0.6rem 0.7rem;
+      font-size: 0.9rem;
+    }
+
+    .checkbox-control { padding: 0.2rem 0; }
+
+    main { padding: 0 1rem 2rem; }
+
+    .grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .card-body { padding: 0.75rem 0.85rem 0.9rem; }
+
+    .view-btn {
+      padding: 0.7rem;
+      font-size: 0.88rem;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -270,6 +338,10 @@
 <div class="toolbar">
   <span class="count-pill" id="count-pill">— matches</span>
   <div class="controls">
+    <label class="checkbox-control">
+      <input type="checkbox" id="below-estimate-filter" />
+      Below PSA estimate only
+    </label>
     <label for="sort" style="font-size:0.82rem;color:var(--text-muted);">Sort by</label>
     <select id="sort">
       <option value="found_desc">Newest first</option>
@@ -277,6 +349,7 @@
       <option value="price_desc">Price: high to low</option>
       <option value="rarity_asc">Rarest first</option>
       <option value="deal_desc">Best deals first</option>
+      <option value="estimate_desc">Best vs PSA estimate first</option>
     </select>
   </div>
 </div>
@@ -336,6 +409,17 @@
     return ((Number(lastSold) - price) / Number(lastSold)) * 100;
   }
 
+  // % below (positive) or above (negative) PSA's own price estimate.
+  // null if we don't have both a listing price and a parseable PSA estimate.
+  function estimatePct(match) {
+    const estRaw = match.cert_info?.psa_estimate;
+    const price = Number(match.price);
+    if (estRaw == null || isNaN(price)) return null;
+    const est = Number(String(estRaw).replace(/[^0-9.-]/g, ""));
+    if (!est || isNaN(est)) return null;
+    return ((est - price) / est) * 100;
+  }
+
   function render(matches) {
     const grid = document.getElementById("grid");
     const empty = document.getElementById("empty");
@@ -385,6 +469,17 @@
         dealHtml = `<span class="deal-badge ${cls}">${good ? "🔥 " : ""}${label}</span>`;
       }
 
+      const estPct = estimatePct(m);
+      let estBadgeHtml = "";
+      if (estPct != null) {
+        const good = estPct >= 0;
+        const cls = good ? "deal-good" : "deal-bad";
+        const label = good
+          ? `${estPct.toFixed(0)}% below PSA est.`
+          : `${Math.abs(estPct).toFixed(0)}% above PSA est.`;
+        estBadgeHtml = `<span class="deal-badge ${cls}">${label}</span>`;
+      }
+
       const lastSoldHtml = cert.last_sold_price
         ? `<span class="last-sold">Last sold $${Number(cert.last_sold_price).toFixed(2)} · ${cert.last_sold_date || ""}${cert.last_sold_venue ? " · " + cert.last_sold_venue : ""}</span>`
         : "";
@@ -395,7 +490,7 @@
           <div class="card-body">
             <p class="card-title">${escapeHtml(m.title)}</p>
             <div class="badges">${badges.join("")}</div>
-            ${dealHtml}
+            <div class="badge-row">${dealHtml}${estBadgeHtml}</div>
             <div class="price-row">
               <span class="price">${fmtPrice(m.price, m.currency)}</span>
               ${estimate}
@@ -431,13 +526,29 @@
         });
       case "deal_desc":
         return copy.sort((a, b) => (dealPct(b) ?? -Infinity) - (dealPct(a) ?? -Infinity));
+      case "estimate_desc":
+        return copy.sort((a, b) => (estimatePct(b) ?? -Infinity) - (estimatePct(a) ?? -Infinity));
       case "found_desc":
       default:
         return copy.sort((a, b) => new Date(b.found_at) - new Date(a.found_at));
     }
   }
 
+  function applyFilters(matches, belowEstimateOnly) {
+    if (!belowEstimateOnly) return matches;
+    return matches.filter(m => {
+      const pct = estimatePct(m);
+      return pct != null && pct >= 0;
+    });
+  }
+
   let allMatches = [];
+
+  function renderCurrent() {
+    const sortMode = document.getElementById("sort").value;
+    const belowEstimateOnly = document.getElementById("below-estimate-filter").checked;
+    render(sortMatches(applyFilters(allMatches, belowEstimateOnly), sortMode));
+  }
 
   function renderFooter(usage) {
     const footer = document.getElementById("footer");
@@ -456,7 +567,7 @@
     .then(r => r.ok ? r.json() : [])
     .then(data => {
       allMatches = Array.isArray(data) ? data : [];
-      render(sortMatches(allMatches, document.getElementById("sort").value));
+      renderCurrent();
 
       fetch("usage.json", { cache: "no-store" })
         .then(r => r.ok ? r.json() : null)
@@ -468,9 +579,8 @@
       document.getElementById("empty").textContent = "Couldn't load data.";
     });
 
-  document.getElementById("sort").addEventListener("change", (e) => {
-    render(sortMatches(allMatches, e.target.value));
-  });
+  document.getElementById("sort").addEventListener("change", renderCurrent);
+  document.getElementById("below-estimate-filter").addEventListener("change", renderCurrent);
 </script>
 
 </body>
