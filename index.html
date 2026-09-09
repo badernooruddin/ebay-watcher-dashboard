@@ -390,6 +390,14 @@
       " " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   }
 
+  // Auctions carry an end_date and are gone once it passes. Fixed-price/
+  // best-offer listings have no end_date and don't expire this way.
+  function isExpired(match) {
+    if (!match.end_date) return false;
+    const d = new Date(match.end_date);
+    return !isNaN(d) && d < new Date();
+  }
+
   // eBay's buyingOptions values: AUCTION, FIXED_PRICE, BEST_OFFER (can combine)
   function listingTypeLabel(buyingOptions) {
     if (!buyingOptions || !buyingOptions.length) return null;
@@ -566,7 +574,7 @@
   fetch(DATA_URL, { cache: "no-store" })
     .then(r => r.ok ? r.json() : [])
     .then(data => {
-      allMatches = Array.isArray(data) ? data : [];
+      allMatches = (Array.isArray(data) ? data : []).filter(m => !isExpired(m));
       renderCurrent();
 
       fetch("usage.json", { cache: "no-store" })
